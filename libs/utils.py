@@ -58,15 +58,3 @@ class logger:
     def debug(message):
         # type: (Text) -> None
         logger.log(message, xbmc.LOGDEBUG)
-
-
-def safe_get(dct, key, default=None):
-    # type: (Dict[Text, Any], Text, Any) -> Any
-    """
-    Get a key from dict
-
-    Returns the respective value or default if key is missing or the value is None.
-    """
-    if key in dct and dct[key] is not None:
-        return dct[key]
-    return default

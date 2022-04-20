@@ -27,7 +27,7 @@ import urllib.parse
 import xbmcgui
 import xbmcplugin
 from . import tmdb, data_utils
-from .utils import logger, safe_get
+from .utils import logger
 try:
     from typing import Optional, Text, Union, ByteString  # pylint: disable=unused-import
 except ImportError:
@@ -39,13 +39,14 @@ HANDLE = int(sys.argv[1])  # type: int
 def find_show(title, year=None):
     # type: (Union[Text, bytes], Optional[Text]) -> None
     """Find a show by title"""
+    # check if title can be interpreted as string and fix if not
     if not isinstance(title, str):
         title = title.decode('utf-8')
     logger.debug('Searching for TV show {} ({})'.format(title, year))
     search_results = tmdb.search_show(title, year)
     for search_result in search_results:
         show_name = search_result['name']
-        if safe_get(search_result, 'first_air_date') is not None:
+        if search_result.get('first_air_date'):
             show_name += ' ({})'.format(search_result['first_air_date'][:4])
         list_item = xbmcgui.ListItem(show_name, offscreen=True)
         show_info = search_result   

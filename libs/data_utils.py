@@ -154,8 +154,9 @@ def _set_rating(the_info, list_item, episode=False):
     return list_item
 
 def _set_runtime(the_info, list_item, episode=False):
-    duration = the_info.get('episode_run_time', '0') * 60
-    list_item.setInfo('video', {'duration': duration})
+    duration = the_info.get('episode_run_time', [0])[0] * 60
+    if duration > 0:
+        list_item.setInfo('video', {'duration': duration})
     return list_item
 
 def _add_season_info(show_info, list_item):
