@@ -27,13 +27,14 @@ from . import settings
 IMDB_RATINGS_URL = 'https://www.imdb.com/title/{}/'
 IMDB_JSON_REGEX = re.compile(
     r'<script type="application\/ld\+json">(.*?)<\/script>')
-
+IMDB_RUNTIME_REGEX = re.compile(
+    r'PT([0-9]*)[^0-9]*([0-9]*)')
 
 def get_details(imdb_id):
     if not imdb_id:
         return {}
-    votes, rating = _get_ratinginfo(imdb_id)
-    return _assemble_imdb_result(votes, rating)
+    votes, rating, runtime = _get_ratinginfo(imdb_id)
+    return _assemble_imdb_result(votes, rating, runtime)
 
 
 def _get_ratinginfo(imdb_id):
@@ -42,19 +43,31 @@ def _get_ratinginfo(imdb_id):
     return _parse_imdb_result(response)
 
 
-def _assemble_imdb_result(votes, rating):
+def _assemble_imdb_result(votes, rating, runtime):
     result = {}
     if votes and rating:
         result['ratings'] = {'imdb': {'votes': votes, 'rating': rating}}
+    if runtime:
+        result['runtime'] = runtime
     return result
 
 
 def _parse_imdb_result(input_html):
     match = re.search(IMDB_JSON_REGEX, input_html)
     if not match:
-        return None, None
+        return None, None, 0
     imdb_json = json.loads(match.group(1))
     imdb_ratings = imdb_json.get("aggregateRating", {})
     rating = imdb_ratings.get("ratingValue", None)
     votes = imdb_ratings.get("ratingCount", None)
-    return votes, rating
+    runtime_str = imdb_json.get("duration", '')
+    match = re.search(IMDB_RUNTIME_REGEX, runtime_str)
+    runtime = 0
+    if match:
+        if match.group(2):
+            runtime = int(match.group(1)) * 3600 + int(match.group(2)) * 60
+        elif int(match.group(1)) < 10:
+            runtime = int(match.group(1)) * 3600
+        else:
+            runtime = int(match.group(1)) * 60
+    return votes, rating, runtime

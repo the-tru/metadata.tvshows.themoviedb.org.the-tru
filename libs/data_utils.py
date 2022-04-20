@@ -25,7 +25,7 @@ from __future__ import absolute_import, unicode_literals
 import re
 import json
 from collections import OrderedDict, namedtuple
-from .utils import safe_get, logger
+from .utils import logger
 from . import settings, api_utils
 
 try:
@@ -90,7 +90,7 @@ def _set_cast(cast_info, list_item):
             'order': item['order'],
         }
         thumb = None
-        if safe_get(item, 'profile_path') is not None:
+        if item.get('profile_path') is not None:
             thumb = settings.IMAGEROOTURL + item['profile_path']
         if thumb:
             data['thumbnail'] = thumb
@@ -154,7 +154,10 @@ def _set_rating(the_info, list_item, episode=False):
     return list_item
 
 def _set_runtime(the_info, list_item, episode=False):
-    duration = the_info.get('episode_run_time', [0])[0] * 60
+    if episode:
+        duration = the_info.get('runtime')
+    else:
+        duration = the_info.get('episode_run_time', [0])[0] * 60
     if duration > 0:
         list_item.setInfo('video', {'duration': duration})
     return list_item
@@ -166,7 +169,7 @@ def _add_season_info(show_info, list_item):
         logger.debug('adding information for season %s to list item' %
                      season['season_number'])
         list_item.addSeason(season['season_number'],
-                            safe_get(season, 'name', ''))
+                            season.get('name', ''))
         for image_type, image_list in season.get('images', {}).items():
             if image_type == 'posters':
                 destination = 'poster'
@@ -230,7 +233,7 @@ def set_show_artwork(show_info, list_item):
 def add_main_show_info(list_item, show_info, full_info=True):
     # type: (ListItem, InfoType, bool) -> ListItem
     """Add main show info to a list item"""
-    plot = _clean_plot(safe_get(show_info, 'overview', ''))
+    plot = _clean_plot(show_info.get('overview', ''))
     original_name = show_info.get('original_name')
     if settings.KEEPTITLE and original_name:
         showname = original_name
@@ -250,8 +253,8 @@ def add_main_show_info(list_item, show_info, full_info=True):
         video['year'] = int(show_info['first_air_date'][:4])
         video['premiered'] = show_info['first_air_date']
     if full_info:
-        video['status'] = safe_get(show_info, 'status', '')
-        genre_list = safe_get(show_info, 'genres', {})
+        video['status'] = show_info.get('status', '')
+        genre_list = show_info.get('genres', {})
         genres = []
         for genre in genre_list:
             genres.append(genre['name'])
@@ -299,7 +302,7 @@ def add_main_show_info(list_item, show_info, full_info=True):
         ext_ids.update(show_info.get('external_ids', {}))
         list_item = _set_unique_ids(ext_ids, list_item)
     else:
-        image = safe_get(show_info, 'poster_path', '')
+        image = show_info.get('poster_path', '')
         if image:
             theurl = settings.IMAGEROOTURL + image
             previewurl = settings.PREVIEWROOTURL + image
@@ -322,13 +325,13 @@ def add_episode_info(list_item, episode_info, full_info=True):
         'episode': episode_info['episode_number'],
         'mediatype': 'episode',
     }
-    if safe_get(episode_info, 'air_date') is not None:
+    if episode_info.get('air_date') is not None:
         video['aired'] = episode_info['air_date']
     if full_info:
-        summary = safe_get(episode_info, 'overview')
+        summary = episode_info.get('overview')
         if summary is not None:
             video['plot'] = video['plotoutline'] = _clean_plot(summary)
-        if safe_get(episode_info, 'air_date') is not None:
+        if episode_info.get('air_date') is not None:
             video['premiered'] = episode_info['air_date']
         list_item = _set_cast(
             episode_info['credits']['guest_stars'], list_item)
@@ -336,6 +339,7 @@ def add_episode_info(list_item, episode_info, full_info=True):
         ext_ids.update(episode_info.get('external_ids', {}))
         list_item = _set_unique_ids(ext_ids, list_item)
         list_item = _set_rating(episode_info, list_item, episode=True)
+        list_item = _set_runtime(episode_info, list_item, episode=True)
         for image in episode_info.get('images', {}).get('stills', []):
             img_path = image.get('file_path')
             if img_path:

@@ -55,12 +55,13 @@ def search_show(title, year=None):
     """
     Search for a single TV show
 
-    :param title: TV show title to search
+    : param title: TV show title to search
     : param year: the year to search (optional)
-    :return: a list with found TV shows
+    : return: a list with found TV shows
     """
     params = TMDB_PARAMS.copy()
     results = []
+    # check if ID was given
     ext_media_id = data_utils.parse_media_id(title)
     if ext_media_id:
         logger.debug('using %s of %s to find show' %
@@ -76,9 +77,10 @@ def search_show(title, year=None):
         params['query'] = unicodedata.normalize('NFKC', title)
         if year:
             params['first_air_date_year'] = str(year)
+
     resp = api_utils.load_info(
         search_url, params=params, verboselog=settings.VERBOSELOG)
-    if resp is not None:
+    if resp is not None: # can get rid of 'is not None'
         if ext_media_id:
             if ext_media_id['type'] == 'tmdb_id':
                 if resp.get('success') == 'false':
@@ -269,6 +271,8 @@ def load_episode_info(show_id, episode_id):
         ep_return['org_epnum'] = episode_info['org_epnum']
         ep_return['ratings'] = load_ratings(
             ep_return, show_imdb_id=show_info.get('external_ids', {}).get('imdb_id'))
+        ep_return['runtime'] = load_runtime(
+            ep_return, show_imdb_id=show_info.get('external_ids', {}).get('imdb_id'))
         show_info['episodes'][int(episode_id)] = ep_return
         cache.cache_show_info(show_info)
         return ep_return
@@ -301,6 +305,14 @@ def load_ratings(the_info, show_imdb_id=''):
     logger.debug('returning ratings of\n{}'.format(pformat(ratings)))
     return ratings
 
+def load_runtime(the_info, show_imdb_id=''):
+    runtime = 0
+    imdb_id = the_info.get('external_ids', {}).get('imdb_id')
+    if show_imdb_id:
+        imdb_runtime = imdbratings.get_details(imdb_id).get('runtime')
+        if imdb_runtime:
+            runtime = imdb_runtime
+    return runtime
 
 def load_fanarttv_art(show_info):
     # type: (Text) -> Optional[InfoType]
