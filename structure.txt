@@ -1,0 +1,9 @@
+Entry: main.py => libs/actions.router(sys.argv[2][1:])
+
+Router redirects the call based on key: action
+- find => libs/actions.find_show
+- nfourl
+- getdetails
+- getepisodelist
+- getepisodedetails
+- getartwork

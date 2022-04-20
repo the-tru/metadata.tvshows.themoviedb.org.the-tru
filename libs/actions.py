@@ -48,7 +48,7 @@ def find_show(title, year=None):
         if safe_get(search_result, 'first_air_date') is not None:
             show_name += ' ({})'.format(search_result['first_air_date'][:4])
         list_item = xbmcgui.ListItem(show_name, offscreen=True)
-        show_info = search_result
+        show_info = search_result   
         list_item = data_utils.add_main_show_info(
             list_item, show_info, full_info=False)
         # Below "url" is some unique ID string (may be an actual URL to a show page)
@@ -193,8 +193,10 @@ def router(paramstring):
     :param paramstring: url-encoded query string
     :raises RuntimeError: on unknown call action
     """
+    # parse paramstring into dictionary of params
     params = dict(urllib.parse.parse_qsl(paramstring))
     logger.debug('Called addon with params: {}'.format(sys.argv))
+    logger.debug('List of params: {}'.format(params))
     if params['action'] == 'find':
         logger.debug('performing find action')
         find_show(params['title'], params.get('year'))
